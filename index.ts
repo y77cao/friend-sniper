@@ -141,20 +141,37 @@ const maybeExit = async (txInfo: ethers.providers.TransactionResponse) => {
       subject,
       shares
     );
+    const estimatedGas = await contract.estimateGas.sellShares(subject, shares);
+    const gasPrice = await provider.getFeeData();
+    const { maxFeePerGas, maxPriorityFeePerGas } = gasPrice;
+    const estimatedGasCost = estimatedGas.mul(
+      maxFeePerGas.add(maxPriorityFeePerGas)
+    );
     // TODO consider gas spend
     const formattedSellPrice = ethers.utils.formatEther(sellPrice);
     const prevCost = BigNumber.from(cost);
     const holdTime = Date.now() - createdAt;
     const oneDay = 1000 * 60 * 60 * 24;
 
-    console.log({ sellPrice, prevCost, formattedSellPrice, holdTime });
+    const delta = sellPrice.sub(prevCost).sub(estimatedGasCost);
 
-    // don't sell if price is lower than cost and if hold time is less than 1 day
-    if (sellPrice.lte(prevCost) && holdTime < oneDay) return;
+    console.log({
+      sellPrice,
+      prevCost,
+      formattedSellPrice,
+      holdTime,
+      estimatedGasCost,
+      delta,
+    });
+
+    // don't sell if we can make any profit and if hold time is less than 1 day
+    if (delta.lte(0) && holdTime < oneDay) return;
 
     const sellTx = await contract.sellShares(subject, shares);
     await sellTx.wait();
     console.log("sellTx", sellTx);
+
+    delete positions[subject];
   } catch (err) {
     console.log(`Get sell price failed`, err);
   }
