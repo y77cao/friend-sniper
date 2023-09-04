@@ -1,3 +1,17 @@
+export type UserByAddressResponse = {
+  id: number;
+  address: string;
+  twitterUsername: string;
+  twitterName: string;
+  twitterPfpUrl: string;
+  twitterUserId: string;
+  lastOnline: number;
+  holderCount: number;
+  holdingCount: number;
+  shareSupply: number;
+  displayPrice: string;
+  lifetimeFeesCollectedInWei: string;
+};
 export class FriendtechClient {
   private readonly apiUrl: string;
 
@@ -5,7 +19,7 @@ export class FriendtechClient {
     this.apiUrl = "https://prod-api.kosetto.com";
   }
 
-  async getUserByAddress(address: string) {
+  async getUserByAddress(address: string): Promise<UserByAddressResponse> {
     let triesCounter = 0;
     while (triesCounter < 3) {
       // flaky API, retry 3 times
